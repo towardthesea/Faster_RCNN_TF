@@ -52,7 +52,7 @@ class VGGnet_train(Network):
         #========= RPN ============
         (self.feed('conv5_3')
              .conv(3,3,512,1,1,name='rpn_conv/3x3')
-             .conv(1,1,len(anchor_scales)*3*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score'))
+             .conv(1,1,len(anchor_scales)*3*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score')) #cls layer is paper
 
         (self.feed('rpn_cls_score','gt_boxes','im_info','data')
              .anchor_target_layer(_feat_stride, anchor_scales, name = 'rpn-data' ))
@@ -60,7 +60,7 @@ class VGGnet_train(Network):
         # Loss of rpn_cls & rpn_boxes
 
         (self.feed('rpn_conv/3x3')
-             .conv(1,1,len(anchor_scales)*3*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred'))
+             .conv(1,1,len(anchor_scales)*3*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred')) # reg layer is paper
 
         #========= RoI Proposal ============
         (self.feed('rpn_cls_score')

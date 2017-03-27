@@ -91,6 +91,19 @@ class Network(object):
     def validate_padding(self, padding):
         assert padding in ('SAME', 'VALID')
 
+    """Convolution Layer,
+        Args:
+            input:  previous layer output
+            k_h:    filter height
+            k_w:    filter weight
+            c_o:    number of output channels
+            s_h:    stride height
+            s_w:    stride weight
+
+        Returns:
+            tensor
+
+    """
     @layer
     def conv(self, input, k_h, k_w, c_o, s_h, s_w, name, relu=True, padding=DEFAULT_PADDING, group=1, trainable=True):
         self.validate_padding(padding)
