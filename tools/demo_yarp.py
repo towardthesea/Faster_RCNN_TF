@@ -22,7 +22,7 @@ CLASSES = ('__background__',
 
 #CLASSES = ('__background__','person','bike','motorbike','car','bus')
 
-def read_yarp_image():
+def read_yarp_image(inport):
 
     # Create numpy array to receive the image and the YARP image wrapped around it
     img_array = np.zeros((240, 320, 3), dtype=np.uint8)
@@ -30,7 +30,7 @@ def read_yarp_image():
     yarp_image.resize(320, 240)
     yarp_image.setExternal(img_array, img_array.shape[1], img_array.shape[0])
     # Read the data from the port into the image
-    input_port.read(yarp_image)
+    inport.read(yarp_image)
     # display the image that has been read
     #matplotlib.pylab.imshow(img_array)
 
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     plt.show()
 
     while port_connected:
-        frame = read_yarp_image()
+        frame = read_yarp_image(inport=input_port)
         cv2.imshow("preview", frame)
         key = cv2.waitKey(20)
         if key == 27: #exit on ESC
