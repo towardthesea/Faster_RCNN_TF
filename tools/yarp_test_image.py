@@ -35,15 +35,21 @@ def yarp_to_python(input_port):
 
 if __name__ == '__main__':
 
-    cv2.namedWindow("preview")
+    cv2.namedWindow("preview-l")
+    cv2.namedWindow("preview-r")
     # cv.NamedWindow("image", cv.CV_WINDOW_AUTOSIZE)
 
 
     # input_port = yarp.BufferedPortImageRgb()
-    input_port = yarp.Port()
-    input_port.open("/python-image-port")
+    input_port_l = yarp.Port()
+    input_port_r = yarp.Port()
+    input_port_l.open("/python-image-port-l")
+    input_port_r.open("/python-image-port-r")
     # yarp.Network.connect("/icub/camcalib/left/out", "/python-image-port")
-    yarp.Network.connect("/icubSim/cam/left", "/python-image-port")
+    # yarp.Network.connect("/icubSim/cam/left", "/python-image-port")
+
+    yarp.Network.connect("/icub/camcalib/left/out", "/python-image-port-l")
+    yarp.Network.connect("/icub/camcalib/right/out", "/python-image-port-r")
     # plt.ion()  # turn on interactive mode
     while True:
 
@@ -61,15 +67,21 @@ if __name__ == '__main__':
         # cv.SetData(cv_img, yarp_image.tostring())
         # cv.CvtColor(cv_img, cv_img, cv.CV_BGR2RGB)
 
-        img_array, _ = yarp_to_python(input_port)
+        img_array_l, _ = yarp_to_python(input_port_l)
+        img_array_r, _ = yarp_to_python(input_port_r)
 
-        cv2_img = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB)
-        cv2.imshow("preview", cv2_img)
+        cv2_img_l = cv2.cvtColor(img_array_l, cv2.COLOR_BGR2RGB)
+        cv2.imshow("preview-l", cv2_img_l)
+
+        cv2_img_r = cv2.cvtColor(img_array_r, cv2.COLOR_BGR2RGB)
+        cv2.imshow("preview-r", cv2_img_r)
 
         key = cv2.waitKey(20)
 
         if key == 27:  # exit on ESC
-                break
+            break
 
     # Cleanup
-    input_port.close()
+    input_port_l.close()
+    input_port_r.close()
+    cv2.destroyAllWindows()

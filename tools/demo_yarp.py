@@ -34,7 +34,7 @@ def read_yarp_image(inport):
     # display the image that has been read
     #matplotlib.pylab.imshow(img_array)
 
-    return yarp_image
+    return img_array, yarp_image
 
 
 def vis_detections(im, class_name, dets,ax, thresh=0.5):
@@ -67,13 +67,14 @@ def vis_detections(im, class_name, dets,ax, thresh=0.5):
     plt.draw()
 
 
-def demo(sess, net, image_name):
+# def demo(sess, net, image_name):
+def demo(sess, net, im):
     """Detect object classes in an image using pre-computed object proposals."""
 
-    # Load the demo image
-    im_file = os.path.join(cfg.DATA_DIR, 'demo', image_name)
-    #im_file = os.path.join('/home/corgi/Lab/label/pos_frame/ACCV/training/000001/',image_name)
-    im = cv2.imread(im_file)
+    # # Load the demo image
+    # im_file = os.path.join(cfg.DATA_DIR, 'demo', image_name)
+    # #im_file = os.path.join('/home/corgi/Lab/label/pos_frame/ACCV/training/000001/',image_name)
+    # im = cv2.imread(im_file)
 
     # Detect all object classes and regress object bounds
     timer = Timer()
@@ -128,9 +129,9 @@ if __name__ == '__main__':
     yarp.Network.init()
     # Create a port and connect it to the iCub simulator virtual camera
     input_port = yarp.Port()
-    input_port.open("/python-image-port")
+    input_port.open("/leftCam")
     port_connected = True
-    if not yarp.Network.connect("/icubSim/cam", "/python-image-port"):
+    if not yarp.Network.connect("/icub/camcalib/left/out", "/leftCam"):
         print('Cannot connect to camera port!')
         port_connected = False
 
@@ -166,8 +167,8 @@ if __name__ == '__main__':
     plt.show()
 
     while port_connected:
-        frame = read_yarp_image(inport=input_port)
-        cv2.imshow("preview", frame)
+        im_arr, _ = read_yarp_image(inport=input_port)
+        cv2.imshow("preview", im_arr)
         key = cv2.waitKey(20)
         if key == 27: #exit on ESC
             break
