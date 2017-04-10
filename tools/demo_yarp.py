@@ -59,8 +59,9 @@ def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
         #         bbox=dict(facecolor='blue', alpha=0.5),
         #         fontsize=14, color='white')
 
-        cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3.5)
-        cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (bbox[0], bbox[1]-2), 0, 0.3, (0, 255, 0))
+	im = im.copy()
+        cv2.rectangle(im, (int(bbox[0]),int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 4)
+#        cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (bbox[0], bbox[1]-2), 0, 0.3, (0, 255, 0))
 
     # ax.set_title(('{} detections with '
     #               'p({} | box) >= {:.1f}').format(class_name, class_name,
@@ -93,7 +94,7 @@ def demo(sess, net, im, fig="preview"):
     im = im[:, :, (2, 1, 0)]
     # fig, ax = plt.subplots(figsize=(12, 12))
     # ax.imshow(im, aspect='equal')
-    cv2.imshow(fig, im)
+    # cv2.imshow(fig, im)
 
     CONF_THRESH = 0.8
     NMS_THRESH = 0.3
@@ -105,7 +106,7 @@ def demo(sess, net, im, fig="preview"):
                           cls_scores[:, np.newaxis])).astype(np.float32)
         keep = nms(dets, NMS_THRESH)
         dets = dets[keep, :]
-        vis_detections(im, cls, dets, thresh=CONF_THRESH)
+        vis_detections(im, cls, dets, thresh=CONF_THRESH, fig=fig)
 
 def parse_args():
     """Parse input arguments."""
@@ -142,7 +143,7 @@ if __name__ == '__main__':
         port_connected = False
 
     # cv2 preview window
-    cv2.namedWindow("preview")
+    # cv2.namedWindow("preview")
 
     # init session
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
@@ -176,9 +177,9 @@ if __name__ == '__main__':
 
     while port_connected:
         im_arr, _ = read_yarp_image(inport=input_port)
-        cv2_img = cv2.cvtColor(im_arr, cv2.COLOR_BGR2RGB)
-        cv2.imshow("preview", cv2_img)
-        demo(sess, net, cv2_img, fig="left")
+#        cv2_img = cv2.cvtColor(im_arr, cv2.COLOR_BGR2RGB)
+#        cv2.imshow("preview", im_arr)
+        demo(sess, net, im_arr, fig="left")
         key = cv2.waitKey(20)
         if key == 27: #exit on ESC
             break
