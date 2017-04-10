@@ -26,7 +26,7 @@ CLASSES = ('__background__',
 def read_yarp_image(inport):
 
     # Create numpy array to receive the image and the YARP image wrapped around it
-    img_array = np.zeros((240, 320, 3), dtype=np.uint8)
+    img_array = np.ones((240, 320, 3), dtype=np.uint8)
     yarp_image = yarp.ImageRgb()
     yarp_image.resize(320, 240)
     yarp_image.setExternal(img_array, img_array.shape[1], img_array.shape[0])
@@ -176,8 +176,9 @@ if __name__ == '__main__':
 
     while port_connected:
         im_arr, _ = read_yarp_image(inport=input_port)
-        cv2.imshow("preview", im_arr)
-        demo(sess, net, im_arr, fig="left")
+        cv2_img = cv2.cvtColor(im_arr, cv2.COLOR_BGR2RGB)
+        cv2.imshow("preview", cv2_img)
+        demo(sess, net, cv2_img, fig="left")
         key = cv2.waitKey(20)
         if key == 27: #exit on ESC
             break
