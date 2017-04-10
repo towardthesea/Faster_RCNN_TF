@@ -1,3 +1,4 @@
+from __future__ import print_function
 import _init_paths
 import tensorflow as tf
 from fast_rcnn.config import cfg
@@ -37,7 +38,7 @@ def read_yarp_image(inport):
     return img_array, yarp_image
 
 
-def vis_detections(im, class_name, dets,ax, thresh=0.5):
+def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
     """Draw detected bounding boxes."""
     inds = np.where(dets[:, -1] >= thresh)[0]
     if len(inds) == 0:
@@ -47,28 +48,32 @@ def vis_detections(im, class_name, dets,ax, thresh=0.5):
         bbox = dets[i, :4]
         score = dets[i, -1]
 
-        ax.add_patch(
-            plt.Rectangle((bbox[0], bbox[1]),
-                          bbox[2] - bbox[0],
-                          bbox[3] - bbox[1], fill=False,
-                          edgecolor='red', linewidth=3.5)
-            )
-        ax.text(bbox[0], bbox[1] - 2,
-                '{:s} {:.3f}'.format(class_name, score),
-                bbox=dict(facecolor='blue', alpha=0.5),
-                fontsize=14, color='white')
+        # ax.add_patch(
+        #     plt.Rectangle((bbox[0], bbox[1]),
+        #                   bbox[2] - bbox[0],
+        #                   bbox[3] - bbox[1], fill=False,
+        #                   edgecolor='red', linewidth=3.5)
+        #     )
+        # ax.text(bbox[0], bbox[1] - 2,
+        #         '{:s} {:.3f}'.format(class_name, score),
+        #         bbox=dict(facecolor='blue', alpha=0.5),
+        #         fontsize=14, color='white')
 
-    ax.set_title(('{} detections with '
-                  'p({} | box) >= {:.1f}').format(class_name, class_name,
-                                                  thresh),
-                  fontsize=14)
-    plt.axis('off')
-    plt.tight_layout()
-    plt.draw()
+        cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3.5)
+        cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (bbox[0], bbox[1]-2), 0, 0.3, (0, 255, 0))
+
+    # ax.set_title(('{} detections with '
+    #               'p({} | box) >= {:.1f}').format(class_name, class_name,
+    #                                               thresh),
+    #               fontsize=14)
+    # plt.axis('off')
+    # plt.tight_layout()
+    # plt.draw()
+    cv2.imshow(fig, im)
 
 
 # def demo(sess, net, image_name):
-def demo(sess, net, im):
+def demo(sess, net, im, fig="preview"):
     """Detect object classes in an image using pre-computed object proposals."""
 
     # # Load the demo image
@@ -81,13 +86,14 @@ def demo(sess, net, im):
     timer.tic()
     scores, boxes = im_detect(sess, net, im)
     timer.toc()
-    print ('Detection took {:.3f}s for '
-           '{:d} object proposals').format(timer.total_time, boxes.shape[0])
+    print(('Detection took {:.3f}s for '
+           '{:d} object proposals').format(timer.total_time, boxes.shape[0]))
 
     # Visualize detections for each class
     im = im[:, :, (2, 1, 0)]
-    fig, ax = plt.subplots(figsize=(12, 12))
-    ax.imshow(im, aspect='equal')
+    # fig, ax = plt.subplots(figsize=(12, 12))
+    # ax.imshow(im, aspect='equal')
+    cv2.imshow(fig, im)
 
     CONF_THRESH = 0.8
     NMS_THRESH = 0.3
@@ -99,7 +105,7 @@ def demo(sess, net, im):
                           cls_scores[:, np.newaxis])).astype(np.float32)
         keep = nms(dets, NMS_THRESH)
         dets = dets[keep, :]
-        vis_detections(im, cls, dets, ax, thresh=CONF_THRESH)
+        vis_detections(im, cls, dets, thresh=CONF_THRESH)
 
 def parse_args():
     """Parse input arguments."""
@@ -155,20 +161,23 @@ if __name__ == '__main__':
     for i in xrange(2):
         _, _= im_detect(sess, net, im)
 
-    im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
-                '001763.jpg', '004545.jpg']
+    # im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
+    #             '001763.jpg', '004545.jpg']
+    #
+    #
+    # for im_name in im_names:
+    #     print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    #     print 'Demo for data/demo/{}'.format(im_name)
+    #     demo(sess, net, im_name)
+    #
+    # plt.show()
 
-
-    for im_name in im_names:
-        print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-        print 'Demo for data/demo/{}'.format(im_name)
-        demo(sess, net, im_name)
-
-    plt.show()
+    cv2.namedWindow("left")
 
     while port_connected:
         im_arr, _ = read_yarp_image(inport=input_port)
         cv2.imshow("preview", im_arr)
+        demo(sess, net, im_arr, fig="left")
         key = cv2.waitKey(20)
         if key == 27: #exit on ESC
             break
