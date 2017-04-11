@@ -61,7 +61,7 @@ def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
 
 	im = im.copy()
         cv2.rectangle(im, (int(bbox[0]),int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 4)
-#        cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (bbox[0], bbox[1]-2), 0, 0.3, (0, 255, 0))
+        cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (int(bbox[0]), int(bbox[1])-2), 0, .7, (0, 255, 0))
 
     # ax.set_title(('{} detections with '
     #               'p({} | box) >= {:.1f}').format(class_name, class_name,
