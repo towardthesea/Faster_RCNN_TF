@@ -59,7 +59,7 @@ def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
         #         bbox=dict(facecolor='blue', alpha=0.5),
         #         fontsize=14, color='white')
 
-	    im = im.copy()
+        im = im.copy()
         cv2.rectangle(im, (int(bbox[0]),int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 4)
         cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (int(bbox[0]), int(bbox[1])-2), 0, .7, (0, 255, 0))
 
@@ -70,7 +70,7 @@ def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
     # plt.axis('off')
     # plt.tight_layout()
     # plt.draw()
-        cv2.imshow(fig, im)
+    cv2.imshow(fig, im)
 
 
 # def demo(sess, net, image_name):
