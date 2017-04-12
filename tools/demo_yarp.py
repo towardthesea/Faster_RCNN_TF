@@ -96,8 +96,8 @@ def demo(sess, net, im, fig="preview"):
     # ax.imshow(im, aspect='equal')
     # cv2.imshow(fig, im)
 
-    CONF_THRESH = 0.8
-    NMS_THRESH = 0.3
+    CONF_THRESH = 0.6
+    NMS_THRESH = 0.4
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
@@ -120,6 +120,11 @@ def parse_args():
                         default='VGGnet_test')
     parser.add_argument('--model', dest='model', help='Model path',
                         default=' ')
+    parser.add_argument('--src', dest='src_port', help='Yarp port of source images',
+                        default='/icub/camcalib/left/out')
+    parser.add_argument('--des', dest='des_port', help='Yarp port of receiver',
+                        default='/leftCam')
+
 
     args = parser.parse_args()
 
@@ -136,9 +141,9 @@ if __name__ == '__main__':
     yarp.Network.init()
     # Create a port and connect it to the iCub simulator virtual camera
     input_port = yarp.Port()
-    input_port.open("/leftCam")
+    input_port.open(args.des_port)
     port_connected = True
-    if not yarp.Network.connect("/icub/camcalib/left/out", "/leftCam"):
+    if not yarp.Network.connect(args.src_port, args.des_port):
         print('Cannot connect to camera port!')
         port_connected = False
 
@@ -146,7 +151,10 @@ if __name__ == '__main__':
     # cv2.namedWindow("preview")
 
     # init session
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.per_process_gpu_memory_fraction = 0.4
+    # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+    sess = tf.Session(config=config)
     # load network
     net = get_network(args.demo_net)
     # load model
@@ -173,18 +181,18 @@ if __name__ == '__main__':
     #
     # plt.show()
 
-    cv2.namedWindow("left")
+    cv2.namedWindow(args.des_port)
 
     while port_connected:
         im_arr, _ = read_yarp_image(inport=input_port)
 #        cv2_img = cv2.cvtColor(im_arr, cv2.COLOR_BGR2RGB)
 #        cv2.imshow("preview", im_arr)
-        demo(sess, net, im_arr, fig="left")
+        demo(sess, net, im_arr, fig=args.des_port)
         key = cv2.waitKey(20)
         if key == 27: #exit on ESC
             break
 
     # Cleanup
     input_port.close()
-    cv2.destroyWindow("preview")
+    cv2.destroyWindow(args.des_port)
 
