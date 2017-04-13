@@ -1,7 +1,8 @@
 import tensorflow as tf
 from networks.network import Network
 
-n_classes = 21
+n_classes = 81  #for COCO
+#n_classes = 21  #for VOC
 _feat_stride = [16,]
 anchor_scales = [8, 16, 32] 
 

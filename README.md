@@ -89,8 +89,21 @@ The demo performs detection using a VGG16 network trained for detection on PASCA
 	cd $FRCN_ROOT
 	./experiments/scripts/faster_rcnn_end2end.sh $DEVICE $DEVICE_ID VGG16 pascal_voc
 	```
-  DEVICE is either cpu/gpu
-
+    DEVICE is either cpu/gpu
+  
+7. Train with COCO
+  - COCO datasets can be obtained from [here](http://mscoco.org/dataset/#download)
+  - Download dataset images, unzip and place at `coco/images/`
+  - Download annotations, unzip and place at `coco/`
+  - Create symlinks for COCO
+    ```bash
+    cd $FRCN_ROOT/data
+    ln -s $COCO_ROOT coco
+    ```
+  - Make sure the number of classes in `VGGnet_train` and `VGGnet_test` is **81**
+  - Download **COCO develop kit** at [github link](https://github.com/pdollar/coco)
+  - Run `make` in `coco/PythonAPI`
+  
 ### The result of testing on PASCAL VOC 2007 
 
 | Classes       | AP     |
