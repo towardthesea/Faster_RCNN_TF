@@ -11,15 +11,17 @@ import os, sys, cv2
 import argparse
 from networks.factory import get_network
 import yarp
+import COCO_classes_string as coco_classes
+import VOC_classes_string as voc_classes
 
+# CLASSES = ('__background__',
+#            'aeroplane', 'bicycle', 'bird', 'boat',
+#            'bottle', 'bus', 'car', 'cat', 'chair',
+#            'cow', 'diningtable', 'dog', 'horse',
+#            'motorbike', 'person', 'pottedplant',
+#            'sheep', 'sofa', 'train', 'tvmonitor')
 
-CLASSES = ('__background__',
-           'aeroplane', 'bicycle', 'bird', 'boat',
-           'bottle', 'bus', 'car', 'cat', 'chair',
-           'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant',
-           'sheep', 'sofa', 'train', 'tvmonitor')
-
+CLASSES = coco_classes.CLASSES
 
 #CLASSES = ('__background__','person','bike','motorbike','car','bus')
 
@@ -74,7 +76,8 @@ def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
 
 
 # def demo(sess, net, image_name):
-def demo(sess, net, im, fig="preview"):
+# def demo(sess, net, im, fig="preview"):
+def demo(sess, net, im, fig="preview", classes=CLASSES):
     """Detect object classes in an image using pre-computed object proposals."""
 
     # # Load the demo image
@@ -96,9 +99,10 @@ def demo(sess, net, im, fig="preview"):
     # ax.imshow(im, aspect='equal')
     # cv2.imshow(fig, im)
 
-    CONF_THRESH = 0.6
-    NMS_THRESH = 0.4
-    for cls_ind, cls in enumerate(CLASSES[1:]):
+    CONF_THRESH = 0.8
+    NMS_THRESH = 0.5
+    # for cls_ind, cls in enumerate(CLASSES[1:]):
+    for cls_ind, cls in enumerate(classes[1:]):
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
         cls_scores = scores[:, cls_ind]
@@ -187,7 +191,7 @@ if __name__ == '__main__':
         im_arr, _ = read_yarp_image(inport=input_port)
 #        cv2_img = cv2.cvtColor(im_arr, cv2.COLOR_BGR2RGB)
 #        cv2.imshow("preview", im_arr)
-        demo(sess, net, im_arr, fig=args.des_port)
+        demo(sess, net, im_arr, fig=args.des_port, classes=coco_classes.CLASSES)
         key = cv2.waitKey(20)
         if key == 27: #exit on ESC
             break
