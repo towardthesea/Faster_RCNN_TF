@@ -42,7 +42,11 @@ cd $FRCN_ROOT
 python ./tools/demo.py --model model_path
 ```
 The demo performs detection using a VGG16 network trained for detection on PASCAL VOC 2007.
-
+#### Demo with YARP
+```Shell
+cd $RFCN_ROOT
+python ./tools/demo_yarp.py --model MODEL_PATH --src CAMERA_PORT --des VIEWER_PORT --usage GPU_FRACTION 
+```
 ### Training Model
 1. Download the training, validation, test data and VOCdevkit
 

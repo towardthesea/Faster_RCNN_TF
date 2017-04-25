@@ -39,6 +39,12 @@ def read_yarp_image(inport):
 
     return img_array, yarp_image
 
+def kp_detector(img):
+    sift = cv2.xfeatures2d.SIFT_create()
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    kp = sift.detect(gray, None)
+    img = cv2.drawKeypoints(gray, kp, img)
+    return img
 
 def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
     """Draw detected bounding boxes."""
@@ -64,6 +70,8 @@ def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
         im = im.copy()
         cv2.rectangle(im, (int(bbox[0]),int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 4)
         cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (int(bbox[0]), int(bbox[1])-2), 0, .7, (0, 255, 0))
+        # im_crop = im[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
+        # im_crop = kp_detector(im_crop)
 
     # ax.set_title(('{} detections with '
     #               'p({} | box) >= {:.1f}').format(class_name, class_name,
@@ -99,8 +107,8 @@ def demo(sess, net, im, fig="preview", classes=CLASSES):
     # ax.imshow(im, aspect='equal')
     # cv2.imshow(fig, im)
 
-    CONF_THRESH = 0.8
-    NMS_THRESH = 0.5
+    CONF_THRESH = 0.7
+    NMS_THRESH = 0.3
     # for cls_ind, cls in enumerate(CLASSES[1:]):
     for cls_ind, cls in enumerate(classes[1:]):
         cls_ind += 1 # because we skipped background
@@ -128,6 +136,8 @@ def parse_args():
                         default='/icub/camcalib/left/out')
     parser.add_argument('--des', dest='des_port', help='Yarp port of receiver',
                         default='/leftCam')
+    parser.add_argument('--usage', dest='gpu_usage', help='GPU memory fraction',
+                        default='0.4', type=float)
 
 
     args = parser.parse_args()
@@ -156,7 +166,7 @@ if __name__ == '__main__':
 
     # init session
     config = tf.ConfigProto(allow_soft_placement=True)
-    config.gpu_options.per_process_gpu_memory_fraction = 0.4
+    config.gpu_options.per_process_gpu_memory_fraction = args.gpu_usage
     # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     sess = tf.Session(config=config)
     # load network
