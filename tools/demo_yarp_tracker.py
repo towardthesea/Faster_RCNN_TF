@@ -14,14 +14,8 @@ import yarp
 import COCO_classes_string as coco_classes
 import VOC_classes_string as voc_classes
 
-# CLASSES = ('__background__',
-#            'aeroplane', 'bicycle', 'bird', 'boat',
-#            'bottle', 'bus', 'car', 'cat', 'chair',
-#            'cow', 'diningtable', 'dog', 'horse',
-#            'motorbike', 'person', 'pottedplant',
-#            'sheep', 'sofa', 'train', 'tvmonitor')
-
 CLASSES = coco_classes.CLASSES
+# CLASSES = voc_classes.CLASSES
 
 #CLASSES = ('__background__','person','bike','motorbike','car','bus')
 
@@ -35,61 +29,63 @@ def read_yarp_image(inport):
     # Read the data from the port into the image
     inport.read(yarp_image)
     # display the image that has been read
-    #matplotlib.pylab.imshow(img_array)
 
     return img_array, yarp_image
 
-def kp_detector(img):
-    sift = cv2.xfeatures2d.SIFT_create()
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    kp = sift.detect(gray, None)
-    img = cv2.drawKeypoints(gray, kp, img)
-    return img
 
 def vis_detections(im, class_name, dets, thresh=0.5, fig="preview"):
     """Draw detected bounding boxes."""
     inds = np.where(dets[:, -1] >= thresh)[0]
+    print('inds :', inds)
     if len(inds) == 0:
         return
 
+    idm = np.argmax(dets[:, -1])
+    print('idm :', idm)
+    print('tracked_bbox :', dets[idm, :4])
     for i in inds:
         bbox = dets[i, :4].astype(int)
         score = dets[i, -1]
 
-        # ax.add_patch(
-        #     plt.Rectangle((bbox[0], bbox[1]),
-        #                   bbox[2] - bbox[0],
-        #                   bbox[3] - bbox[1], fill=False,
-        #                   edgecolor='red', linewidth=3.5)
-        #     )
-        # ax.text(bbox[0], bbox[1] - 2,
-        #         '{:s} {:.3f}'.format(class_name, score),
-        #         bbox=dict(facecolor='blue', alpha=0.5),
-        #         fontsize=14, color='white')
-
         im = im.copy()
         cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 4)
-        cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (bbox[0], bbox[1] - 2), 0, .7, (0, 255, 0))
+        cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (bbox[0], bbox[1]-2), 0, .7, (0, 255, 0))
 
-    # ax.set_title(('{} detections with '
-    #               'p({} | box) >= {:.1f}').format(class_name, class_name,
-    #                                               thresh),
-    #               fontsize=14)
-    # plt.axis('off')
-    # plt.tight_layout()
-    # plt.draw()
     cv2.imshow(fig, im)
+    return dets[idm, :4].astype(int)
 
+def get_best_bbox(dets, thresh=0.5):
+    """Draw detected bounding boxes."""
+    inds = np.where(dets[:, -1] >= thresh)[0]
+    print('inds :', inds)
+    if len(inds) == 0:
+        return
 
-# def demo(sess, net, image_name):
-# def demo(sess, net, im, fig="preview"):
-def demo(sess, net, im, fig="preview", classes=CLASSES):
+    idm = np.argmax(dets[:, -1])
+    print('idm :', idm)
+    print('tracked_bbox :', dets[idm, :4])
+
+    return dets[idm, :4].astype(int)
+
+def obj_tracking(tracker, im, fig="preview"):
+
+    # Visualize detections for each class
+    im = im[:, :, (2, 1, 0)]
+    # Update tracker
+    ok, bbox = tracker.update(im)
+
+    # Draw bounding box
+    if ok:
+        im = im.copy()
+        p1 = (int(bbox[0]), int(bbox[1]))
+        p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+        cv2.rectangle(im, p1, p2, (0, 0, 255), 4)
+
+    cv2.imshow(fig, im)
+    return ok
+
+def demo(sess, net, im, fig="preview", classes=CLASSES, tracked_obj="person"):
     """Detect object classes in an image using pre-computed object proposals."""
-
-    # # Load the demo image
-    # im_file = os.path.join(cfg.DATA_DIR, 'demo', image_name)
-    # #im_file = os.path.join('/home/corgi/Lab/label/pos_frame/ACCV/training/000001/',image_name)
-    # im = cv2.imread(im_file)
 
     # Detect all object classes and regress object bounds
     timer = Timer()
@@ -101,12 +97,11 @@ def demo(sess, net, im, fig="preview", classes=CLASSES):
 
     # Visualize detections for each class
     im = im[:, :, (2, 1, 0)]
-    # fig, ax = plt.subplots(figsize=(12, 12))
-    # ax.imshow(im, aspect='equal')
-    # cv2.imshow(fig, im)
 
-    CONF_THRESH = 0.7
+    CONF_THRESH = 0.8
     NMS_THRESH = 0.3
+    has_trk_obj = False
+    trked_bbox = []
     # for cls_ind, cls in enumerate(CLASSES[1:]):
     for cls_ind, cls in enumerate(classes[1:]):
         cls_ind += 1 # because we skipped background
@@ -116,7 +111,33 @@ def demo(sess, net, im, fig="preview", classes=CLASSES):
                           cls_scores[:, np.newaxis])).astype(np.float32)
         keep = nms(dets, NMS_THRESH)
         dets = dets[keep, :]
-        vis_detections(im, cls, dets, thresh=CONF_THRESH, fig=fig)
+
+    #     print('check')
+    #     if cls == tracked_obj:
+    #         print('Found tracked object', tracked_obj)
+    #         trked_bbox = get_best_bbox(dets, thresh=CONF_THRESH)
+    #         print('check 1')
+    #         print('trked_bbox', trked_bbox)
+    #         if trked_bbox is not None:
+    #             print('check 2a')
+    #             has_trk_obj = True
+    #             return has_trk_obj, trked_bbox
+    #         print('check 2b')
+    #     print('check 3')
+    # print('check 4')
+    # return has_trk_obj
+
+        trked_bbox = vis_detections(im, cls, dets, thresh=CONF_THRESH, fig=fig)
+        print(cls_ind, cls)
+        if cls == tracked_obj:
+            print('Found tracked object', tracked_obj)
+        if cls == tracked_obj and trked_bbox is not None:
+            has_trk_obj = True
+            break
+    return has_trk_obj, trked_bbox
+
+
+
 
 def parse_args():
     """Parse input arguments."""
@@ -134,9 +155,10 @@ def parse_args():
                         default='/icub/camcalib/left/out')
     parser.add_argument('--des', dest='des_port', help='Yarp port of receiver',
                         default='/leftCam')
-    parser.add_argument('--usage', dest='gpu_usage', help='GPU memory fraction',
-                        default='0.4', type=float)
 
+
+    parser.add_argument('--trk', dest='trk_obj', help='Name of object to track',
+                        default='person')
 
     args = parser.parse_args()
 
@@ -159,12 +181,8 @@ if __name__ == '__main__':
         print('Cannot connect to camera port!')
         port_connected = False
 
-    # cv2 preview window
-    # cv2.namedWindow("preview")
-
-    # init session
     config = tf.ConfigProto(allow_soft_placement=True)
-    config.gpu_options.per_process_gpu_memory_fraction = args.gpu_usage
+    config.gpu_options.per_process_gpu_memory_fraction = 0.4
     # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     sess = tf.Session(config=config)
     # load network
@@ -172,8 +190,6 @@ if __name__ == '__main__':
     # load model
     saver = tf.train.Saver(write_version=tf.train.SaverDef.V1)
     saver.restore(sess, args.model)
-   
-    #sess.run(tf.initialize_all_variables())
 
     print('\n\nLoaded network {:s}'.format(args.model))
 
@@ -182,24 +198,46 @@ if __name__ == '__main__':
     for i in xrange(2):
         _, _= im_detect(sess, net, im)
 
-    # im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
-    #             '001763.jpg', '004545.jpg']
-    #
-    #
-    # for im_name in im_names:
-    #     print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-    #     print 'Demo for data/demo/{}'.format(im_name)
-    #     demo(sess, net, im_name)
-    #
-    # plt.show()
-
     cv2.namedWindow(args.des_port)
 
-    while port_connected:
+    tracker = cv2.Tracker_create("KCF")
+    # tracker = cv2.Tracker_create("GOTURN")
+
+    # Obtain the first frame
+    # Detect the bbox of tracked object from the first frame
+    # Initialize tracker with first frame and bounding box
+
+    print("tracked_obj", args.trk_obj)
+    has_obj = False
+    ok = False
+    tracked_bbox = ()
+    while port_connected and not has_obj:
         im_arr, _ = read_yarp_image(inport=input_port)
-#        cv2_img = cv2.cvtColor(im_arr, cv2.COLOR_BGR2RGB)
-#        cv2.imshow("preview", im_arr)
-        demo(sess, net, im_arr, fig=args.des_port, classes=CLASSES)
+        has_obj, tracked_bbox = demo(sess, net, im_arr, fig=args.des_port,
+                                     classes=CLASSES,
+                                     tracked_obj=args.trk_obj)
+        print('tracked_bbox', tracked_bbox)
+        if has_obj and tracked_bbox is not None:
+            bbox = (tracked_bbox[0], tracked_bbox[1],
+                    tracked_bbox[2]-tracked_bbox[0],
+                    tracked_bbox[3]-tracked_bbox[1])
+            ok = tracker.init(im_arr, bbox)
+
+    while port_connected and ok:
+        im_arr, _ = read_yarp_image(inport=input_port)
+
+        # # Update tracker
+        # ok, bbox = tracker.update(im_arr)
+        #
+        # # Draw bounding box
+        # if ok:
+        #     p1 = (int(bbox[0]), int(bbox[1]))
+        #     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+        #     cv2.rectangle(im_arr, p1, p2, (0, 0, 255))
+        #
+        # cv2.imshow(args.des_port,im_arr)
+        ok = obj_tracking(tracker, im_arr, fig=args.des_port)
+
         key = cv2.waitKey(20)
         if key == 27: #exit on ESC
             break
