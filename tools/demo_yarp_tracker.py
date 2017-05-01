@@ -99,7 +99,7 @@ def demo(sess, net, im, fig="preview", classes=CLASSES, tracked_obj="person"):
     im = im[:, :, (2, 1, 0)]
 
     CONF_THRESH = 0.8
-    NMS_THRESH = 0.3
+    NMS_THRESH = 0.6
     has_trk_obj = False
     trked_bbox = []
     # for cls_ind, cls in enumerate(CLASSES[1:]):
@@ -155,8 +155,8 @@ def parse_args():
                         default='/icub/camcalib/left/out')
     parser.add_argument('--des', dest='des_port', help='Yarp port of receiver',
                         default='/leftCam')
-
-
+    parser.add_argument('--usage', dest='gpu_usage', help='GPU memory fraction',
+                        default='0.4', type=float)
     parser.add_argument('--trk', dest='trk_obj', help='Name of object to track',
                         default='person')
 
@@ -182,7 +182,7 @@ if __name__ == '__main__':
         port_connected = False
 
     config = tf.ConfigProto(allow_soft_placement=True)
-    config.gpu_options.per_process_gpu_memory_fraction = 0.4
+    config.gpu_options.per_process_gpu_memory_fraction = args.gpu_usage
     # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     sess = tf.Session(config=config)
     # load network
